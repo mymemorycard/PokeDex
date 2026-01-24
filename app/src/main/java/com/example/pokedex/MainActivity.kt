@@ -1,0 +1,53 @@
+package com.example.pokedex
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.rememberNavController
+import com.example.pokedex.models.ViewModel
+import com.example.pokedex.ui.theme.PokeDexTheme
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            PokeDexTheme {
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    Box(
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        App()
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun App(
+    viewModel: ViewModel = viewModel()
+) {
+    val navController = rememberNavController()
+    NavHost(
+        navController = navController,
+        startDestination = "root"
+    ) {
+        pokeApiGraph(
+            navController = navController,
+            viewModel = viewModel
+        )
+    }
+}
+

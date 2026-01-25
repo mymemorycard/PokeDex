@@ -200,27 +200,23 @@ data class TypeName(
     val url: String,
 )
 
-private val BASE_URL =
-    "https://pokeapi.co/api/v2/"
 
-private fun createClient(): OkHttpClient {
-    val logging = HttpLoggingInterceptor();
-    logging.setLevel(HttpLoggingInterceptor.Level.BODY)
-    val client: OkHttpClient = OkHttpClient.Builder().addInterceptor(logging).build()
-    return client
+class PokeAPIService {
+    private val BASE_URL =
+        "https://pokeapi.co/api/v2/"
+
+    private val client: OkHttpClient
+        get() {
+            val logging = HttpLoggingInterceptor()
+            logging.setLevel(HttpLoggingInterceptor.Level.BODY)
+            val client: OkHttpClient = OkHttpClient.Builder().addInterceptor(logging).build()
+            return client
+        }
+    private val retrofit = Retrofit.Builder()
+        .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))
+        .baseUrl(BASE_URL).client(client).build()
+    val pokeAPISerivce: PokeAPI = retrofit.create<PokeAPI>()
 }
-
-val client = createClient()
-
-private val json = Json { ignoreUnknownKeys = true }
-
-val retrofit = Retrofit.Builder()
-    .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-    .baseUrl(BASE_URL)
-    .client(client)
-    .build()
-
-val pokeApiService: PokeAPI = retrofit.create<PokeAPI>()
 
 interface PokeAPI {
     @GET("pokemon")

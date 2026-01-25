@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 class ViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+    val _pokeAPIService = PokeAPIService().pokeAPISerivce
 
     init {
         fetchMore()
@@ -35,7 +36,7 @@ class ViewModel : ViewModel() {
                 _uiState.value.copy(loading = LoadingState.Loading)
             }
             try {
-                val listResult = pokeApiService.list(uiState.value.pokemonList.size, 100)
+                val listResult = _pokeAPIService.list(uiState.value.pokemonList.size, 100)
                 _uiState.update {
                     _uiState.value.copy(
                         loading = LoadingState.Ok,
@@ -60,7 +61,7 @@ class ViewModel : ViewModel() {
                 _uiState.value.copy(loading = LoadingState.Loading)
             }
             try {
-                val result = pokeApiService.getPokemon(name)
+                val result = _pokeAPIService.getPokemon(name)
                 _uiState.update {
                     _uiState.value.copy(
                         loading = LoadingState.Ok,

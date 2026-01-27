@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import com.example.pokedex.models.ViewModel
+import com.example.pokedex.models.PokemonViewModel
 import com.example.pokedex.ui.theme.PokeDexTheme
 
 class MainActivity : ComponentActivity() {
@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun App(
-    viewModel: ViewModel = viewModel()
+    pokemonViewModel: PokemonViewModel = viewModel()
 ) {
     val navController = rememberNavController()
     NavHost(
@@ -46,7 +46,7 @@ fun App(
     ) {
         pokeApiGraph(
             navController = navController,
-            viewModel = viewModel
+            pokemonViewModel = pokemonViewModel
         )
     }
 }

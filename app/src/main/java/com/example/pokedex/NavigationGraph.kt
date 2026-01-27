@@ -11,7 +11,7 @@ import androidx.navigation.navigation
 import com.example.pokedex.components.FallbckStates.ErrorComponent
 import com.example.pokedex.components.FallbckStates.LoadingComponent
 import com.example.pokedex.models.LoadingState
-import com.example.pokedex.models.ViewModel
+import com.example.pokedex.models.PokemonViewModel
 import com.example.pokedex.screens.InfoScreen
 import com.example.pokedex.screens.ListScreen
 
@@ -24,23 +24,23 @@ sealed class Screen(val route: String) {
 
 
 fun NavGraphBuilder.pokeApiGraph(
-    navController: NavController, viewModel: ViewModel
+    navController: NavController, pokemonViewModel: PokemonViewModel
 ) {
     navigation(
         startDestination = Screen.List.route, route = "root"
     ) {
 
         composable(Screen.List.route) {
-            val state by viewModel.uiState.collectAsState()
+            val state = pokemonViewModel.uiState
             ListScreen(
                 list = state.pokemonList,
                 open = { i ->
-                    viewModel.fetchPokemon(i)
+                    pokemonViewModel.fetchPokemon(i)
                     navController.navigate(Screen.Details.createRoute(i))
                 },
                 favorites = state.favorites,
-                onRetry = viewModel::fetchMore,
-                onLoadMore = viewModel::fetchMore,
+                onRetry = pokemonViewModel::fetchMore,
+                onLoadMore = pokemonViewModel::fetchMore,
                 loadingState = state.loading
             )
         }
@@ -52,18 +52,18 @@ fun NavGraphBuilder.pokeApiGraph(
                 })
         ) { backStackEntry ->
             val name = backStackEntry.arguments?.getString("name")
-            val state = viewModel.uiState.collectAsState().value
+            val state = pokemonViewModel.uiState
             val pokemon = state.pokemonByName[name]
             if (state.loading == LoadingState.Loading) LoadingComponent()
             else if (state.loading == LoadingState.Error || pokemon == null || name == null) ErrorComponent(
                 onRetry = {
-                    if (name != null) viewModel.fetchPokemon(name)
+                    if (name != null) pokemonViewModel.fetchPokemon(name)
                     else navController.popBackStack()
                 }) else InfoScreen(
                 pokemonInfo = pokemon,
                 favorite = !state.favorites.contains(name),
                 onToggleFavorite = {
-                    viewModel.toggleFavorites(name)
+                    pokemonViewModel.toggleFavorites(name)
                 })
         }
     }

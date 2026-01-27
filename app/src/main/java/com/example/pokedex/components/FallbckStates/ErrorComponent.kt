@@ -23,6 +23,7 @@ fun ErrorComponent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Text("Something went wrong")
         Button(
             onClick = onRetry, modifier = Modifier.padding(16.dp)
         ) {

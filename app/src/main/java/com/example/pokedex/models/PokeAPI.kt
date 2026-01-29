@@ -200,31 +200,32 @@ data class TypeName(
     val url: String,
 )
 
+class PokeAPIRepository : PokeRepository {
+    private lateinit var pokeAPI: PokeAPI
 
-class PokeAPIRepository {
-    lateinit var pokeAPI: PokeAPI
     init {
-        val BASE_URL =
-            "https://pokeapi.co/api/v2/"
+        val BASE_URL = "https://pokeapi.co/api/v2/"
+        val logging = HttpLoggingInterceptor()
+        logging.setLevel(HttpLoggingInterceptor.Level.BODY)
+        val client: OkHttpClient = OkHttpClient.Builder()
+            .addInterceptor(logging)
+            .build()
 
-
-            val logging = HttpLoggingInterceptor();
-            logging.setLevel(HttpLoggingInterceptor.Level.BODY)
-            val client: OkHttpClient = OkHttpClient.Builder().addInterceptor(logging).build()
-
-
-         val json = Json { ignoreUnknownKeys = true }
-         val retrofit = Retrofit.Builder()
+        val json = Json { ignoreUnknownKeys = true }
+        val retrofit = Retrofit.Builder()
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-            .baseUrl(BASE_URL).client(client).build()
-         pokeAPI = retrofit.create<PokeAPI>()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .build()
+
+        pokeAPI = retrofit.create<PokeAPI>()
     }
 
-    suspend fun list(offset: Int): PokeList {
+    override suspend fun list(offset: Int): PokeList {
         return pokeAPI.list(offset, 100)
     }
 
-    suspend fun getPokemon(name: String): PokemonInfo {
+    override suspend fun getPokemon(name: String): PokemonInfo {
         return pokeAPI.getPokemon(name)
     }
 }

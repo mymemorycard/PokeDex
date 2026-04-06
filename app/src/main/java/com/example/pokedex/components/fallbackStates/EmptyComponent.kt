@@ -1,4 +1,4 @@
-package com.example.pokedex.components.FallbackStates
+package com.example.pokedex.components.fallbackStates
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,9 +12,7 @@ import androidx.compose.ui.Modifier
 @Composable
 fun EmptyComponent() {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(),
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

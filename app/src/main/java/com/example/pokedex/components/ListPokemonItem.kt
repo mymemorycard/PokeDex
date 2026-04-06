@@ -14,9 +14,7 @@ fun ListPokemonItem(
     onClick: () -> Unit,
     favorite: Boolean
 ) {
-    ListItem(
-        onClick = onClick
-    ) {
+    ListItem(onClick = onClick) {
         Row {
             if (favorite) Text(text = "❤️")
             Text(text = pokemon.name)

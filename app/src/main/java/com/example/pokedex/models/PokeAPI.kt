@@ -1,17 +1,15 @@
 package com.example.pokedex.models
 
+import com.example.pokedex.dao.FavoritePokemonDao
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
-import retrofit2.create
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Serializable
 data class PokeList(
@@ -200,26 +198,11 @@ data class TypeName(
     val url: String,
 )
 
-class PokeAPIRepository : PokeRepository {
-    private lateinit var pokeAPI: PokeAPI
-
-    init {
-        val BASE_URL = "https://pokeapi.co/api/v2/"
-        val logging = HttpLoggingInterceptor()
-        logging.setLevel(HttpLoggingInterceptor.Level.BODY)
-        val client: OkHttpClient = OkHttpClient.Builder()
-            .addInterceptor(logging)
-            .build()
-
-        val json = Json { ignoreUnknownKeys = true }
-        val retrofit = Retrofit.Builder()
-            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-            .baseUrl(BASE_URL)
-            .client(client)
-            .build()
-
-        pokeAPI = retrofit.create<PokeAPI>()
-    }
+@Singleton
+class PokeAPIRepository @Inject constructor(
+    private val pokeAPI: PokeAPI,
+    private val favoriteDao: FavoritePokemonDao
+) : PokeRepository {
 
     override suspend fun list(offset: Int): PokeList {
         return pokeAPI.list(offset, 100)
@@ -227,6 +210,20 @@ class PokeAPIRepository : PokeRepository {
 
     override suspend fun getPokemon(name: String): PokemonInfo {
         return pokeAPI.getPokemon(name)
+    }
+
+    override suspend fun toggleFavorite(pokemon: ApiResult) {
+        if (favoriteDao.isFavorite(pokemon.name)) {
+            favoriteDao.removeFromFavorites(FavoritePokemon(pokemon.name, pokemon.url))
+        } else {
+            favoriteDao.addToFavorites(FavoritePokemon(pokemon.name, pokemon.url))
+        }
+    }
+
+    override fun getFavorites(): Flow<Set<String>> {
+        return favoriteDao.getAllFavorites().map { favorites ->
+            favorites.map { it.name }.toSet()
+        }
     }
 }
 

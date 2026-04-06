@@ -7,10 +7,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.pokedex.components.FallbackStates.EmptyComponent
-import com.example.pokedex.components.FallbackStates.ErrorComponent
-import com.example.pokedex.components.FallbackStates.LoadingComponent
 import com.example.pokedex.components.ListPokemonItem
+import com.example.pokedex.components.fallbackStates.EmptyComponent
+import com.example.pokedex.components.fallbackStates.ErrorComponent
+import com.example.pokedex.components.fallbackStates.LoadingComponent
 import com.example.pokedex.models.ApiResult
 import com.example.pokedex.models.LoadingState
 
@@ -23,9 +23,7 @@ fun ListScreen(
     onRetry: () -> Unit,
     onLoadMore: () -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier.padding(16.dp)
-    ) {
+    LazyColumn(modifier = Modifier.padding(16.dp)) {
         if (list.isEmpty()) {
             item {
                 when (loadingState) {
@@ -46,9 +44,7 @@ fun ListScreen(
             item {
                 when (loadingState) {
                     LoadingState.Error -> ErrorComponent(onRetry)
-                    LoadingState.Ok -> Button(onClick = onLoadMore) {
-                        Text("Load more")
-                    }
+                    LoadingState.Ok -> Button(onClick = onLoadMore) { Text("Load more") }
                     LoadingState.Loading -> LoadingComponent()
                 }
             }

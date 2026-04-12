@@ -6,8 +6,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
-import com.example.pokedex.components.FallbackStates.ErrorComponent
-import com.example.pokedex.components.FallbackStates.LoadingComponent
+import com.example.pokedex.components.fallbackStates.ErrorComponent
+import com.example.pokedex.components.fallbackStates.LoadingComponent
 import com.example.pokedex.models.LoadingState
 import com.example.pokedex.models.PokemonViewModel
 import com.example.pokedex.screens.InfoScreen
@@ -59,10 +59,8 @@ fun NavGraphBuilder.pokeApiGraph(
                     else navController.popBackStack()
                 }) else InfoScreen(
                 pokemonInfo = pokemon,
-                favorite = !state.favorites.contains(name),
-                onToggleFavorite = {
-                    pokemonViewModel.toggleFavorites(name)
-                })
+                favorite = state.favorites.contains(name),
+                onToggleFavorite = { pokemonViewModel.toggleFavorites(name) })
         }
     }
 }

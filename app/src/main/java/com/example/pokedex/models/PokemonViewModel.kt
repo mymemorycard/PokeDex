@@ -5,22 +5,37 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class PokemonViewModel(
+@HiltViewModel
+class PokemonViewModel @Inject constructor(
     private val pokeRepository: PokeRepository
 ) : ViewModel() {
+
     var uiState by mutableStateOf(UiState())
+        private set
 
     init {
         fetchMore()
+        observeFavorites()
+    }
+
+    private fun observeFavorites() {
+        viewModelScope.launch {
+            pokeRepository.getFavorites().collect { favorites ->
+                uiState = uiState.copy(favorites = favorites)
+            }
+        }
     }
 
     fun toggleFavorites(name: String) {
-        if (uiState.favorites.contains(name)) {
-            uiState = uiState.copy(favorites = uiState.favorites - setOf(name))
-        } else {
-            uiState = uiState.copy(favorites = uiState.favorites + setOf(name))
+        viewModelScope.launch {
+            val pokemon = uiState.pokemonList.find { it.name == name }
+            if (pokemon != null) {
+                pokeRepository.toggleFavorite(pokemon)
+            }
         }
     }
 

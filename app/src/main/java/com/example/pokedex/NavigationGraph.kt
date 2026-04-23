@@ -22,13 +22,11 @@ sealed class Screen(val route: String) {
     }
 }
 
-
 fun NavGraphBuilder.pokeApiGraph(
-    navController: NavController, pokemonViewModel: PokemonViewModel
+    navController: NavController,
+    pokemonViewModel: PokemonViewModel
 ) {
-    navigation(
-        startDestination = Screen.List.route, route = "root"
-    ) {
+    navigation(startDestination = Screen.List.route, route = "root") {
 
         composable(Screen.List.route) {
             val state by pokemonViewModel.uiState.collectAsStateWithLifecycle()
@@ -50,25 +48,27 @@ fun NavGraphBuilder.pokeApiGraph(
         }
 
         composable(
-            Screen.Details.route, arguments = listOf(
+            Screen.Details.route,
+            arguments = listOf(
                 navArgument("name") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val name = backStackEntry.arguments?.getString("name")
             val detail by pokemonViewModel.detailState.collectAsStateWithLifecycle()
-            val listState by pokemonViewModel.uiState.collectAsStateWithLifecycle()
+            val favorites by pokemonViewModel.favorites.collectAsStateWithLifecycle()
 
+            val pokemon = detail.pokemon
             when {
                 detail.loading == LoadingState.Loading -> LoadingComponent()
-                detail.loading == LoadingState.Error || detail.pokemon == null || name == null ->
+                detail.loading == LoadingState.Error || pokemon == null || name == null ->
                     ErrorComponent(onRetry = {
                         if (name != null) pokemonViewModel.fetchPokemon(name)
                         else navController.popBackStack()
                     })
 
                 else -> InfoScreen(
-                    pokemonInfo = detail.pokemon!!,
-                    favorite = listState.favorites.contains(name),
+                    pokemonInfo = pokemon,
+                    favorite = favorites.contains(name),
                     onToggleFavorite = { pokemonViewModel.toggleFavorites(name) }
                 )
             }

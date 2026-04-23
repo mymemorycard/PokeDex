@@ -39,16 +39,26 @@
 - `StateFlow` — для длительного состояния, у которого всегда есть актуальное значение: `uiState`, `detailState`, `queryFlow`, `filterFlow`
 - `SharedFlow` — для потоков **действий/триггеров**: `refreshTrigger` (Refresh/Retry), `detailRequests` (запрос на детальный экран). Не используется как one-shot event-bus
 
-### Покрытие тестами (полный набор актуален)
+### Покрытие тестами
 
-Unit-тесты `PokemonViewModelTest` (отдельно для Flow-композиции):
+Unit-тесты `PokemonViewModelTest` (Flow-сценарии):
 
 - `query is debounced and filters list by name` — три быстрых `setQuery` приводят к одному пересчёту после `debounce`
 - `filter favorites only restricts list to favorites set` — переключение `FilterMode` пересобирает список через `combine`
 - `favorites flow update is reflected in ui state without manual reload` — пуш в Room-Flow автоматически обновляет UI без ручного reload
+- `favorites stateflow is independent from list subscription lifecycle` — Eagerly-поток избранного работает даже когда uiState отписан
 - `refresh after error performs a new request and recovers` — `SharedFlow` действий + `flatMapLatest` корректно переигрывают загрузку
+- `setFilterMode does not trigger a new network request` — фильтрация чисто реактивная, без походов в сеть
 - `fetchPokemon stores details and exposes them via detailState` — отдельный `StateFlow` для деталей
+- `detail retry for the same name triggers a fresh request` — повторный fetch того же имени реально перезапускает запрос
 - `detailState exposes error when getPokemon fails` — ошибка в потоке деталей корректно отражается в state
+
+Итого:
+
+- `12` unit-тестов на `PokemonViewModel` (включая Flow-композицию, debounce, retry, error)
+- `4` unit-теста на `PokeAPIRepository`
+- `2` интеграционных теста `PokeAPIRepository` + Room
+- `2` UI-интеграционных теста (навигация и retry)
 
 ## Домашнее задание 5
 

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
@@ -180,30 +181,84 @@ class PokemonViewModelTest {
         }
 
         val viewModel = PokemonViewModel(repository)
+        keepSubscribed(viewModel.detailState)
         advanceUntilIdle()
 
-        viewModel.detailState.test {
-            assertEquals(DetailState(loading = LoadingState.Loading, pokemon = null), awaitItem())
+        assertEquals(DetailState(LoadingState.Loading, null), viewModel.detailState.value)
 
-            viewModel.fetchPokemon("pikachu")
-            val ok = awaitItem()
-            assertEquals(LoadingState.Ok, ok.loading)
-            assertEquals(samplePokemonInfo("pikachu"), ok.pokemon)
+        viewModel.fetchPokemon("pikachu")
+        advanceUntilIdle()
 
-            cancelAndIgnoreRemainingEvents()
-        }
+        assertEquals(LoadingState.Ok, viewModel.detailState.value.loading)
+        assertEquals(samplePokemonInfo("pikachu"), viewModel.detailState.value.pokemon)
         assertEquals(listOf("pikachu"), repository.requestedPokemonNames)
+    }
+
+    @Test
+    fun `detail retry for the same name triggers a fresh request`() = runTest {
+        val repository = FakePokeRepository().apply {
+            listResults += { samplePokeList("pikachu") }
+            pokemonResults["pikachu"] = samplePokemonInfo("pikachu")
+        }
+
+        val viewModel = PokemonViewModel(repository)
+        keepSubscribed(viewModel.detailState)
+        advanceUntilIdle()
+
+        viewModel.fetchPokemon("pikachu")
+        advanceUntilIdle()
+        assertEquals(LoadingState.Ok, viewModel.detailState.value.loading)
+
+        viewModel.fetchPokemon("pikachu")
+        advanceUntilIdle()
+        assertEquals(2, repository.requestedPokemonNames.count { it == "pikachu" })
+    }
+
+    @Test
+    fun `favorites stateflow is independent from list subscription lifecycle`() = runTest {
+        val repository = FakePokeRepository().apply {
+            listResults += { samplePokeList("pikachu") }
+            favoritesFlow.value = setOf("pikachu")
+        }
+
+        val viewModel = PokemonViewModel(repository)
+        advanceUntilIdle()
+
+        assertEquals(setOf("pikachu"), viewModel.favorites.value)
+
+        repository.favoritesFlow.value = setOf("pikachu", "bulbasaur")
+        advanceUntilIdle()
+
+        assertEquals(setOf("pikachu", "bulbasaur"), viewModel.favorites.value)
+    }
+
+    @Test
+    fun `setFilterMode does not trigger a new network request`() = runTest {
+        val repository = FakePokeRepository().apply {
+            listResults += { samplePokeList("pikachu", "bulbasaur") }
+        }
+
+        val viewModel = PokemonViewModel(repository)
+        keepSubscribed(viewModel.uiState)
+        advanceUntilIdle()
+
+        viewModel.setFilterMode(FilterMode.FavoritesOnly)
+        viewModel.setFilterMode(FilterMode.All)
+        viewModel.setQuery("bul")
+        advanceUntilIdle()
+
+        assertEquals(1, repository.listCalls)
     }
 
     @Test
     fun `detailState exposes error when getPokemon fails`() = runTest {
         val repository = FakePokeRepository().apply {
             listResults += { samplePokeList("pikachu") }
-            pokemonResults["pikachu"] = samplePokemonInfo("pikachu")
             failPokemonFetches = true
         }
 
         val viewModel = PokemonViewModel(repository)
+        keepSubscribed(viewModel.detailState)
         advanceUntilIdle()
 
         viewModel.fetchPokemon("pikachu")
@@ -212,7 +267,7 @@ class PokemonViewModelTest {
         assertEquals(LoadingState.Error, viewModel.detailState.value.loading)
     }
 
-    private fun <T> kotlinx.coroutines.test.TestScope.keepSubscribed(state: StateFlow<T>) {
+    private fun <T> TestScope.keepSubscribed(state: StateFlow<T>) {
         backgroundScope.launch { state.collect {} }
     }
 

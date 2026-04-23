@@ -1,13 +1,15 @@
 package com.example.pokedex
 
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
-import com.example.pokedex.components.FallbackStates.ErrorComponent
-import com.example.pokedex.components.FallbackStates.LoadingComponent
+import com.example.pokedex.components.fallbackStates.ErrorComponent
+import com.example.pokedex.components.fallbackStates.LoadingComponent
 import com.example.pokedex.models.LoadingState
 import com.example.pokedex.models.PokemonViewModel
 import com.example.pokedex.screens.InfoScreen
@@ -29,40 +31,47 @@ fun NavGraphBuilder.pokeApiGraph(
     ) {
 
         composable(Screen.List.route) {
-            val state = pokemonViewModel.uiState
+            val state by pokemonViewModel.uiState.collectAsStateWithLifecycle()
             ListScreen(
                 list = state.pokemonList,
-                open = { i ->
-                    pokemonViewModel.fetchPokemon(i)
-                    navController.navigate(Screen.Details.createRoute(i))
-                },
                 favorites = state.favorites,
-                onRetry = pokemonViewModel::fetchMore,
-                onLoadMore = pokemonViewModel::fetchMore,
-                loadingState = state.loading
+                query = state.query,
+                filterMode = state.filterMode,
+                loadingState = state.loading,
+                onQueryChange = pokemonViewModel::setQuery,
+                onFilterChange = pokemonViewModel::setFilterMode,
+                onRefresh = pokemonViewModel::refresh,
+                onRetry = pokemonViewModel::refresh,
+                open = { name ->
+                    pokemonViewModel.fetchPokemon(name)
+                    navController.navigate(Screen.Details.createRoute(name))
+                }
             )
         }
 
         composable(
             Screen.Details.route, arguments = listOf(
-                navArgument("name") {
-                    type = NavType.StringType
-                })
+                navArgument("name") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
             val name = backStackEntry.arguments?.getString("name")
-            val state = pokemonViewModel.uiState
-            val pokemon = state.pokemonByName[name]
-            if (state.loading == LoadingState.Loading) LoadingComponent()
-            else if (state.loading == LoadingState.Error || pokemon == null || name == null) ErrorComponent(
-                onRetry = {
-                    if (name != null) pokemonViewModel.fetchPokemon(name)
-                    else navController.popBackStack()
-                }) else InfoScreen(
-                pokemonInfo = pokemon,
-                favorite = !state.favorites.contains(name),
-                onToggleFavorite = {
-                    pokemonViewModel.toggleFavorites(name)
-                })
+            val detail by pokemonViewModel.detailState.collectAsStateWithLifecycle()
+            val listState by pokemonViewModel.uiState.collectAsStateWithLifecycle()
+
+            when {
+                detail.loading == LoadingState.Loading -> LoadingComponent()
+                detail.loading == LoadingState.Error || detail.pokemon == null || name == null ->
+                    ErrorComponent(onRetry = {
+                        if (name != null) pokemonViewModel.fetchPokemon(name)
+                        else navController.popBackStack()
+                    })
+
+                else -> InfoScreen(
+                    pokemonInfo = detail.pokemon!!,
+                    favorite = listState.favorites.contains(name),
+                    onToggleFavorite = { pokemonViewModel.toggleFavorites(name) }
+                )
+            }
         }
     }
 }

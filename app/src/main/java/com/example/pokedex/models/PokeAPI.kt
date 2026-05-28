@@ -2,13 +2,6 @@ package com.example.pokedex.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
-import retrofit2.create
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -147,7 +140,6 @@ data class VersionGroup(
     val url: String,
 )
 
-
 @Serializable
 data class Species(
     val name: String,
@@ -199,36 +191,6 @@ data class TypeName(
     val name: String,
     val url: String,
 )
-
-class PokeAPIRepository : PokeRepository {
-    private lateinit var pokeAPI: PokeAPI
-
-    init {
-        val BASE_URL = "https://pokeapi.co/api/v2/"
-        val logging = HttpLoggingInterceptor()
-        logging.setLevel(HttpLoggingInterceptor.Level.BODY)
-        val client: OkHttpClient = OkHttpClient.Builder()
-            .addInterceptor(logging)
-            .build()
-
-        val json = Json { ignoreUnknownKeys = true }
-        val retrofit = Retrofit.Builder()
-            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-            .baseUrl(BASE_URL)
-            .client(client)
-            .build()
-
-        pokeAPI = retrofit.create<PokeAPI>()
-    }
-
-    override suspend fun list(offset: Int): PokeList {
-        return pokeAPI.list(offset, 100)
-    }
-
-    override suspend fun getPokemon(name: String): PokemonInfo {
-        return pokeAPI.getPokemon(name)
-    }
-}
 
 interface PokeAPI {
     @GET("pokemon")

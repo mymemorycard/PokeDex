@@ -1,5 +1,8 @@
 package com.example.pokedex
 
+import androidx.compose.runtime.getValue
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -9,6 +12,7 @@ import androidx.navigation.navigation
 import com.example.pokedex.components.FallbackStates.ErrorComponent
 import com.example.pokedex.components.FallbackStates.LoadingComponent
 import com.example.pokedex.models.LoadingState
+import com.example.pokedex.models.PokemonDetailViewModel
 import com.example.pokedex.models.PokemonViewModel
 import com.example.pokedex.screens.InfoScreen
 import com.example.pokedex.screens.ListScreen
@@ -20,49 +24,48 @@ sealed class Screen(val route: String) {
     }
 }
 
-
-fun NavGraphBuilder.pokeApiGraph(
-    navController: NavController, pokemonViewModel: PokemonViewModel
-) {
-    navigation(
-        startDestination = Screen.List.route, route = "root"
-    ) {
+fun NavGraphBuilder.pokeApiGraph(navController: NavController) {
+    navigation(startDestination = Screen.List.route, route = "root") {
 
         composable(Screen.List.route) {
-            val state = pokemonViewModel.uiState
+            val viewModel: PokemonViewModel = hiltViewModel()
+            val state by viewModel.uiState.collectAsStateWithLifecycle()
+            val query by viewModel.query.collectAsStateWithLifecycle()
+            val filter by viewModel.filter.collectAsStateWithLifecycle()
+
             ListScreen(
                 list = state.pokemonList,
-                open = { i ->
-                    pokemonViewModel.fetchPokemon(i)
-                    navController.navigate(Screen.Details.createRoute(i))
-                },
                 favorites = state.favorites,
-                onRetry = pokemonViewModel::fetchMore,
-                onLoadMore = pokemonViewModel::fetchMore,
-                loadingState = state.loading
+                query = query,
+                filter = filter,
+                loadingState = state.loading,
+                canLoadMore = state.canLoadMore,
+                onQueryChange = viewModel::onQueryChange,
+                onFilterChange = viewModel::onFilterChange,
+                onRefresh = viewModel::refresh,
+                onLoadMore = viewModel::loadMore,
+                onRetry = viewModel::refresh,
+                open = { name -> navController.navigate(Screen.Details.createRoute(name)) },
             )
         }
 
         composable(
-            Screen.Details.route, arguments = listOf(
-                navArgument("name") {
-                    type = NavType.StringType
-                })
-        ) { backStackEntry ->
-            val name = backStackEntry.arguments?.getString("name")
-            val state = pokemonViewModel.uiState
-            val pokemon = state.pokemonByName[name]
-            if (state.loading == LoadingState.Loading) LoadingComponent()
-            else if (state.loading == LoadingState.Error || pokemon == null || name == null) ErrorComponent(
-                onRetry = {
-                    if (name != null) pokemonViewModel.fetchPokemon(name)
-                    else navController.popBackStack()
-                }) else InfoScreen(
-                pokemonInfo = pokemon,
-                favorite = !state.favorites.contains(name),
-                onToggleFavorite = {
-                    pokemonViewModel.toggleFavorites(name)
-                })
+            Screen.Details.route,
+            arguments = listOf(navArgument(PokemonDetailViewModel.NAME_ARG) { type = NavType.StringType }),
+        ) {
+            val viewModel: PokemonDetailViewModel = hiltViewModel()
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            val pokemon = state.pokemon
+
+            when {
+                state.loading == LoadingState.Loading && pokemon == null -> LoadingComponent()
+                state.loading == LoadingState.Error && pokemon == null -> ErrorComponent(onRetry = viewModel::retry)
+                pokemon != null -> InfoScreen(
+                    pokemonInfo = pokemon,
+                    favorite = state.isFavorite,
+                    onToggleFavorite = viewModel::toggleFavorite,
+                )
+            }
         }
     }
 }

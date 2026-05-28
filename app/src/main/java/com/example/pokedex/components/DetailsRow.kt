@@ -20,7 +20,11 @@ fun DetailsRow(
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = label)
-        Text(text = value)
+        Text(
+            text = label
+        )
+        Text(
+            text = value
+        )
     }
 }

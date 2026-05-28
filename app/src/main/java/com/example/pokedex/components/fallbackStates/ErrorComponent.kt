@@ -1,4 +1,4 @@
-package com.example.pokedex.components.fallbackStates
+package com.example.pokedex.components.FallbackStates
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,28 +9,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.example.pokedex.TestTags
+
 
 @Composable
 fun ErrorComponent(
     onRetry: () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = "Something went wrong",
-            modifier = Modifier.testTag(TestTags.errorMessage)
-        )
+        Text("Something went wrong")
         Button(
-            onClick = onRetry,
-            modifier = Modifier
-                .padding(16.dp)
-                .testTag(TestTags.retryButton)
+            onClick = onRetry, modifier = Modifier.padding(16.dp)
         ) {
             Text("Try again")
         }

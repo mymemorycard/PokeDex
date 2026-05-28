@@ -10,20 +10,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import com.example.pokedex.models.PokemonViewModel
 import com.example.pokedex.ui.theme.PokeDexTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
         setContent {
             PokeDexTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -34,22 +30,12 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
 }
 
 @Composable
 fun App() {
-    val viewModel: PokemonViewModel = hiltViewModel()
-
     val navController = rememberNavController()
-
-    NavHost(
-        navController = navController,
-        startDestination = "root"
-    ) {
-        pokeApiGraph(
-            navController = navController,
-            pokemonViewModel = viewModel
-        )
+    NavHost(navController = navController, startDestination = "root") {
+        pokeApiGraph(navController = navController)
     }
 }

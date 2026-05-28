@@ -3,111 +3,92 @@ package com.example.pokedex.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.example.pokedex.TestTags
+import com.example.pokedex.components.FallbackStates.EmptyComponent
+import com.example.pokedex.components.FallbackStates.ErrorComponent
+import com.example.pokedex.components.FallbackStates.LoadingComponent
 import com.example.pokedex.components.ListPokemonItem
-import com.example.pokedex.components.fallbackStates.EmptyComponent
-import com.example.pokedex.components.fallbackStates.ErrorComponent
-import com.example.pokedex.components.fallbackStates.LoadingComponent
 import com.example.pokedex.models.ApiResult
 import com.example.pokedex.models.FilterMode
 import com.example.pokedex.models.LoadingState
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListScreen(
     list: List<ApiResult>,
     favorites: Set<String>,
     query: String,
-    filterMode: FilterMode,
+    filter: FilterMode,
     loadingState: LoadingState,
+    canLoadMore: Boolean,
     onQueryChange: (String) -> Unit,
     onFilterChange: (FilterMode) -> Unit,
     onRefresh: () -> Unit,
+    onLoadMore: () -> Unit,
     onRetry: () -> Unit,
-    open: (String) -> Unit
+    open: (String) -> Unit,
 ) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                label = { Text("Search") },
-                singleLine = true,
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag(TestTags.searchField)
-            )
-            IconButton(
-                onClick = onRefresh,
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                    .testTag(TestTags.refreshButton)
-            ) {
-                Text("⟳")
-            }
-        }
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            label = { Text("Search") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(vertical = 8.dp),
         ) {
             FilterChip(
-                selected = filterMode == FilterMode.All,
+                selected = filter == FilterMode.All,
                 onClick = { onFilterChange(FilterMode.All) },
                 label = { Text("All") },
-                modifier = Modifier.testTag(TestTags.filterAll)
             )
             FilterChip(
-                selected = filterMode == FilterMode.FavoritesOnly,
+                selected = filter == FilterMode.FavoritesOnly,
                 onClick = { onFilterChange(FilterMode.FavoritesOnly) },
                 label = { Text("Favorites") },
-                modifier = Modifier.testTag(TestTags.filterFavorites)
             )
+            TextButton(onClick = onRefresh) { Text("Refresh") }
         }
 
-        LazyColumn(
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .testTag(TestTags.listScreen)
-        ) {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
             if (list.isEmpty()) {
                 item {
                     when (loadingState) {
                         LoadingState.Loading -> LoadingComponent()
                         LoadingState.Error -> ErrorComponent(onRetry)
-                        LoadingState.Ok -> EmptyComponent(
-                            message = if (query.isNotBlank() || filterMode == FilterMode.FavoritesOnly)
-                                "No matches"
-                            else
-                                "Nothing here"
-                        )
+                        LoadingState.Ok -> EmptyComponent()
                     }
                 }
             } else {
-                items(list.size) { i ->
+                items(list, key = { it.name }) { pokemon ->
                     ListPokemonItem(
-                        list[i],
-                        { open(list[i].name) },
-                        favorites.contains(list[i].name)
+                        pokemon = pokemon,
+                        onClick = { open(pokemon.name) },
+                        favorite = favorites.contains(pokemon.name),
                     )
+                }
+
+                item {
+                    when {
+                        loadingState == LoadingState.Loading -> LoadingComponent()
+                        loadingState == LoadingState.Error -> ErrorComponent(onRetry)
+                        canLoadMore -> Button(onClick = onLoadMore) { Text("Load more") }
+                    }
                 }
             }
         }

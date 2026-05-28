@@ -1,15 +1,10 @@
 package com.example.pokedex.models
 
-import com.example.pokedex.dao.FavoritePokemonDao
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
-import javax.inject.Inject
-import javax.inject.Singleton
 
 @Serializable
 data class PokeList(
@@ -145,7 +140,6 @@ data class VersionGroup(
     val url: String,
 )
 
-
 @Serializable
 data class Species(
     val name: String,
@@ -197,35 +191,6 @@ data class TypeName(
     val name: String,
     val url: String,
 )
-
-@Singleton
-class PokeAPIRepository @Inject constructor(
-    private val pokeAPI: PokeAPI,
-    private val favoriteDao: FavoritePokemonDao
-) : PokeRepository {
-
-    override suspend fun list(offset: Int): PokeList {
-        return pokeAPI.list(offset, 100)
-    }
-
-    override suspend fun getPokemon(name: String): PokemonInfo {
-        return pokeAPI.getPokemon(name)
-    }
-
-    override suspend fun toggleFavorite(pokemon: ApiResult) {
-        if (favoriteDao.isFavorite(pokemon.name)) {
-            favoriteDao.removeFromFavorites(FavoritePokemon(pokemon.name, pokemon.url))
-        } else {
-            favoriteDao.addToFavorites(FavoritePokemon(pokemon.name, pokemon.url))
-        }
-    }
-
-    override fun getFavorites(): Flow<Set<String>> {
-        return favoriteDao.getAllFavorites().map { favorites ->
-            favorites.map { it.name }.toSet()
-        }
-    }
-}
 
 interface PokeAPI {
     @GET("pokemon")
